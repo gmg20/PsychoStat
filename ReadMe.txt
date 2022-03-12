@@ -2,7 +2,11 @@
 
 https://www.youtube.com/channel/UCVL4KlEVdka88SggTzWBw1w
 
-Feel free to download files and code so that you can follow along with my videos!
+Feel free to download lectures, datafiles and code scripts so that you can follow along with my videos!
+
+* There are 2 main folders:
+  * Statistics Concepts (PowerPoint lectures)
+  * Statistics with R (datasets and R scripts)
 
 Here is a list of the sources from where I obtained some of these datasets:
 

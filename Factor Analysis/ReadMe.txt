@@ -1,3 +1,0 @@
-# Big Five Personality Test Factor Analysis
-
-The dataset is labeled 'bigfive_data' and consists of items and metadata collected from 19,719 responses to the OCEAN Five Factor Personality Tests. The data was hosted on www.openpsychometrics.org, and was then accessed from a Kaggle page hosted by Lucas Greenwell, found at https://www.kaggle.com/lucasgreenwell. All analyses and associated documentation are my own.
