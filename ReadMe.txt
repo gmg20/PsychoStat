@@ -10,4 +10,4 @@ Feel free to download lectures, datafiles and code scripts so that you can follo
 
 Here is a list of the sources from where I obtained some of these datasets:
 
-1) "hr" dataset: Yuan et al. (2021). https://osf.io/yx2us/#!
+1) "turnover" dataset: Yuan et al. (2021). https://osf.io/yx2us/#!
