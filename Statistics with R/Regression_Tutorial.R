@@ -21,6 +21,8 @@ library(ppcor)
 library(rwa)
 library(MBESS)
 library(flextable)
+library(lmtest)
+library(dominanceanalysis)
 
 # Load and View Data
 turnover<-read.csv("turnover.csv") # Read Data
@@ -45,6 +47,9 @@ levels(turnover$manager_cent)<-c("No","Yes")
 turnover$manager_raw<-as.factor(turnover$manager_raw) # Manager Role?
 levels(turnover$manager_raw)<-c("No","Yes")
 
+turnover$educ_raw<-as.factor(turnover$educ_raw) # Education Level
+turnover$educ_cent<-as.factor(turnover$educ_cent)
+
 # Check to make sure all variables are as they should be
 str(turnover) 
 
@@ -56,7 +61,7 @@ describe(turnover$paysatis_raw)
 describe(turnover$turnover)
 
 # Correlation between  Numeric Variables (disregarding cat. vars)
-corPlot(turnover[,-c(3,4,7,8,10,11)]) 
+corPlot(turnover[,-c(3,4,5,6,7,8,10,11)]) 
 cor(turnover$turnover, turnover$paysatis_raw)
 
 # Scatterplot of turnover intentions and pay satisfaction
@@ -88,27 +93,35 @@ ols_plot_resid_stud(m1)
 # Multiple Regression -> Turnover Intent Predicted from Pay Satis + Career Opportunity
 ######################################################################################
 # Correlation Plot of Numeric Variables
-corPlot(turnover[,-c(3,4,7,8,10,11)]) 
+corPlot(turnover[,-c(3,4,5,6,7,8,10,11)]) 
 
 # Scatterplot of Turnover ~ CareerOpp by itself
 p2<-ggplot(turnover, aes(careeropp_raw, turnover)) + geom_point()
 p2<-p2 + geom_smooth(method="lm",se=FALSE)
 p2 + ggtitle("Turnover Predicted from Career Opportunity")
 
+# Multiple Regression Model Starts
 m2<-lm(turnover ~ paysatis_raw + careeropp_raw,data=turnover) # Fit Model
 summary(m2) # Summary 
 
 confint(m2) # Raw/Unstd Regression Coefficients
 effectsize(m2) # Standardized Regression Coefficients
 
-# Effect Sizes
-# Semi-partial correlation matrix
-semicorr<-spcor(turnover[,c("turnover","paysatis_raw","careeropp_raw")])
-semicorr
+ci.R2(R2=.1885, df.1=2, df.2=1451) # 95% CI for R2
 
-# Squared semi-partials
-semicorrsq<-semicorr$estimate^2
-semicorrsq["turnover",]
+# Effect Sizes
+# (Squared semi-partial correlation)
+
+# Method 1 for semipartial square (EASIEST)
+aovm2<-Anova(m2, type=3)
+eta_squared(aovm2, partial=FALSE)
+
+# Method 2 for semipartial square
+semicorr<-spcor(turnover[,c("turnover","paysatis_raw","careeropp_raw")]) 
+semicorr # semicorr matrix
+semicorrsq<-semicorr$estimate^2 
+semicorrsq["turnover",] # semicorr squared matrix
+
 
 # Get 3D Regression Plane -> Super Cool!
 scatter3d(turnover ~ paysatis_raw + careeropp_raw, data=turnover)
@@ -131,6 +144,11 @@ ols_plot_resid_hist(m2)
 ols_plot_cooksd_chart(m2)
 ols_plot_resid_stud(m2)
 
+ncvTest(m2) # Test homogeneity of error variance assumption
+coeftest(m2) # sandwich estimator if error variance non-constant
+
+vif(m2) #Multicollinearity
+
 ##################################################################################
 # Adding Categorical Predictors 
 #################################################################################
@@ -138,49 +156,63 @@ ols_plot_resid_stud(m2)
 # Example 1: -> Turnover Predicted From Pay Sat + ManagerStatus
 # Let's get descriptive statistics by group first
 
-describeBy(turnover$turnover, turnover$manager)
-describeBy(turnover$paysatis, turnover$manager)
+describeBy(turnover$turnover, turnover$manager_raw)
+describeBy(turnover$paysatis_raw, turnover$manager_raw)
 
 # Side-by-side boxplot
 
-p3a<-ggplot(turnover, aes(manager, turnover, color=manager, fill=manager))+geom_boxplot(alpha=0.3)
+p3a<-ggplot(turnover, aes(manager_raw, turnover, color=manager_raw, fill=manager_raw))+geom_boxplot(alpha=0.3)
 p3a
 
-p3b<-ggplot(turnover, aes(manager, paysatis, color=manager, fill=manager))+geom_boxplot(alpha=0.3)
+p3b<-ggplot(turnover, aes(manager_raw, paysatis_raw, color=manager_raw, fill=manager_raw))+geom_boxplot(alpha=0.3)
 p3b
 
 # Scatterplot 
-p3c<-ggplot(turnover, aes(paysatis, turnover, color=manager)) + geom_point()
+p3c<-ggplot(turnover, aes(paysatis_raw, turnover, color=manager_raw)) + geom_point()
 p3c + geom_smooth(method="lm",se=FALSE)
 
-# Regression Model
-m3<-lm(turnover ~ paysatis + manager, data=turnover) # Fit Model
-summary(m3) # Summary
 
-confint(m3) # Unstandardized Confidence Intervals
-effectsize(m3) # Standardized CI
+# Regression model with just categorical
+m3a<-lm(turnover ~ manager_raw, data=turnover) # Fit Model
+contrasts(turnover$manager_raw) # Dummy Coding
+summary(m3a) # Summary
+describeBy(turnover$turnover, turnover$manager_raw) # Compare mean diffs to model output
 
-# Effect Sizes
-aovm3<-Anova(m3, type=3)
-eta_squared(aovm3, partial=FALSE)
+# Example model with more than 2 groups/factor levels
+m3b<-lm(turnover ~ educ_raw, data=turnover)
+contrasts(turnover$educ_raw) # Illustrate dummy coding
+summary(m3b)
+describeBy(turnover$turnover, turnover$educ_raw) # Compare mean diffs to model output
 
-outreg(m2, type="html") # Get model output to table
+# Regression Model with both categorical and continuous
+m3c<-lm(turnover ~ paysatis_raw + manager_raw, data=turnover) # Fit Model
+summary(m3c) # Summary
+
+confint(m3c) # Unstandardized Confidence Intervals 
+effectsize(m3c) # Standardized CI
+
+# Effect Sizes (Squared Semi-partial correlations)
+aovm3c<-Anova(m3c, type=3)
+eta_squared(aovm3c, partial=FALSE)
+
+outreg(m3c, type="html") # Get model output to table
 
 ## Does ManagerStatus predict T/O Intent above & beyond PaySatis?
-anova(m3, m1) # No it doesn't!
+anova(m3c, m1) # No it doesn't!
 
-# Relative Weights (need numeric only)
-turnover %>% rwa(outcome = "turnover",predictors = c("paysatis", "careeropp", "manager"))
+# Dominance Analysis (Similar to Relative Weights, which only take numeric)
+da_m3c<-dominanceAnalysis(m3c)
+print(da_m3c)
 
 # Regression Diagnostics
 
-plot(m3) # Base R Diagnostics
+plot(m3c) # Base R Diagnostics
 
-ols_plot_resid_qq(m3) # Prettier Diagnostics
-ols_plot_resid_fit(m3)
-ols_plot_resid_hist(m3)
-ols_plot_cooksd_chart(m3)
-ols_plot_resid_stud(m3)
+ols_plot_resid_qq(m3c) # Prettier Diagnostics
+ols_plot_resid_fit(m3c)
+ols_plot_resid_hist(m3c)
+ols_plot_cooksd_chart(m3c)
+ols_plot_resid_stud(m3c)
 
 #################################################################################
 # Adding a Categorical Predictor
