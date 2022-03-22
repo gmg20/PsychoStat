@@ -5,8 +5,8 @@ library(psych)
 library(effsize)
 
 # Set grouping variable as factor (tells R it's a grouping variable)
-gender_study$Gender<-as.factor(gender_study$Gender)
-levels(gender_study$Gender)<-c("Women","Men")
+gender_study$Gender <- as.factor(gender_study$Gender)
+levels(gender_study$Gender) <- c("Women", "Men")
 gender_study$Gender
 
 # Descriptives by Group Level
@@ -34,9 +34,7 @@ t.test(gender_study$StudyHrs ~ gender_study$Gender, alternative = "greater")
 cohensD(gender_study$StudyHrs ~ gender_study$Gender)
 
 # Independent samples separate-variance Cohens D
-cohensD(gender_study$StudyHrs ~ gender_study$Gender, method="unequal")
+cohensD(gender_study$StudyHrs ~ gender_study$Gender, method = "unequal")
 
 # Paired-samples Cohens D
-cohensD(gender_study$StudyHrs[gender_study$Gender=="Women"], gender_study$StudyHrs[gender_study$Gender=="Men"])
-
-
+cohensD(gender_study$StudyHrs[gender_study$Gender == "Women"], gender_study$StudyHrs[gender_study$Gender == "Men"])
