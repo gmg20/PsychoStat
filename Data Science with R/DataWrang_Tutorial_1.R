@@ -15,12 +15,9 @@ df_b<-read.csv("hr.csv")
 df[1]     
 df[,1]    
 
-
-
 # Multiple columns (all rows)
 df[1:3]     
 df[,c(1:3)] 
-
 
 # Column by name (all rows)
 df['code']  
@@ -83,6 +80,38 @@ df <- df[,-c(37:39)] # Multiple Variables removed
 # Relocate variable columns
 
 df <- df %>% relocate(careeropp, .before=educ)
+
+################################################################################
+################################################################################
+
+# Tables/Percentages/Crosstabs of observations and proportions by groups/category
+
+################################################################################
+################################################################################
+
+# Single Variable Table-> Employee Counts by Education level
+table(df$educ)
+
+# Single Variable Percentages -> Percentage Employees by Education Level
+prop.table(table((df$educ)))
+
+# Contingency Table 2 Variables (Crosstabulation)-> Gender by Manager Crosstab
+xtabs(~ gender + manager, data = df)
+
+# 3 Variable Crosstab/Array -> Gender by Manager by Education Level
+xtabs(~ gender + manager + educ, data = df)
+
+# Proportions/Percentages for Multiple variables BY CELL
+prop.table(xtabs(~gender + manager, data = df))
+
+# Proportions/Percentages for Multiple variables BY ROW (MARGINAL)
+prop.table(xtabs(~gender + manager, data = df), margin = 1)
+
+# Proportions/Percentages for Multiple variables BY COLUMN (MARGINAL)
+prop.table(xtabs(~gender + manager + educ, data = df), margin = 2)
+
+# Proportions/Percentages for Multiple variables BY ARRAY ELEMENT (MARGINAL)
+prop.table(xtabs(~gender + manager + educ, data = df), margin = 3)
 
 ################################################################################
 ################################################################################
