@@ -1,7 +1,7 @@
 library(tidyverse)
 
-df<-read.csv("turnover_full.csv")
-df_b<-read.csv("hr.csv")
+df <- read.csv("turnover_full.csv")
+df_b <- read.csv("hr.csv")
 
 ################################################################################
 ################################################################################
@@ -11,75 +11,89 @@ df_b<-read.csv("hr.csv")
 ################################################################################
 ################################################################################
 
+# df[row, column] is how we index/specify rows and/or columns
+
 # First column of dataset (all rows included)
-df[1]     
-df[,1]    
+
+df[, 1]
 
 # Multiple columns (all rows)
-df[1:3]     
-df[,c(1:3)] 
+df[, 1:3]
+df[, c(1, 2, 3)]
 
 # Column by name (all rows)
-df['code']  
-df$code     
+df[, "code"]
+df$code
 
 # Multiple columns by name (all rows)
-df[c("code","age")]
+df[, c("code", "age")]
 
 # All columns EXCEPT first column
-df[-1]  
-df[,-1]
+
+df3 <- df[, -1]
+head(df3)
 
 # All columns EXCEPT first, second, and fourth columns
-df[,-c(1,2,4)]
+df3 <- df[, -c(1, 2, 4)]
+head(df3)
 
 # First Row and all Columns
-df[1,]
+df[1, ]
 
 # First and ninth row, all columns
-df[c(1,9),]
+df[c(1, 9), ]
 
-# Fifth row, third and fourth columns
-df[c(1,5),c(3,4)]
+# First and Fifth row, third and fourth columns
+df[c(1, 5), c(3, 4)]
 
 # Rows 1:10, age and gender variables
-df[c(1:10),c("age","gender")]
+df[c(1:10), c("age", "gender")]
 
 ################################################################################
 ################################################################################
 
-# Basic Housekeeping 
+# Basic Housekeeping
 
 ################################################################################
 ################################################################################
 
 # Examine structure of data
 
-str(df)
+head(x = df) # Gives us the first few rows
+tail(x = df) # Last few rows
+
+str(object = df) # Structure of variables in the dataset -> Important!
 
 # Convert any categorical variables to factors
-df$gender<-factor(df$gender)
-df$manager<-factor(df$manager)
+df$gender <- factor(df$gender)
+df$manager <- factor(df$manager)
 
-# If your categorical variables are coded numerically and you want labels
-levels(df$gender)<-c("Male", "Female")
-levels(df$manager)<-c("No","Yes")
+# If your categorical variables are coded numerically and you want to change that
+levels(df$gender) <- c("Male", "Female")
+levels(df$manager) <- c("No", "Yes")
 
 # rename any specific variables
 names(df)[1] <- "turnover"
+head(df)
 
 # make variable names lower case/upper case
 names(df) <- toupper(names(df))
+names(df)
+
 names(df) <- tolower(names(df))
+names(df)
 
 # remove a variable from the dataframe
-df <- df[-39]       # Single Variable removed
+df <- df[, -38] # Single Variable removed (the 38th variable in this example)
+head(df)
 
-df <- df[,-c(37:39)] # Multiple Variables removed
+df <- df[, -c(37, 38, 39)] # Multiple Variables removed
+head(df)
 
 # Relocate variable columns
 
-df <- df %>% relocate(careeropp, .before=educ)
+df <- df %>% relocate(caropp, .before = educ)
+head(df)
 
 ################################################################################
 ################################################################################
@@ -93,7 +107,7 @@ df <- df %>% relocate(careeropp, .before=educ)
 table(df$educ)
 
 # Single Variable Percentages -> Percentage Employees by Education Level
-prop.table(table((df$educ)))
+prop.table(table((df$educ))) * 100
 
 # Contingency Table 2 Variables (Crosstabulation)-> Gender by Manager Crosstab
 xtabs(~ gender + manager, data = df)
@@ -102,16 +116,16 @@ xtabs(~ gender + manager, data = df)
 xtabs(~ gender + manager + educ, data = df)
 
 # Proportions/Percentages for Multiple variables BY CELL
-prop.table(xtabs(~gender + manager, data = df))
+prop.table(xtabs(~ gender + manager, data = df))
 
 # Proportions/Percentages for Multiple variables BY ROW (MARGINAL)
-prop.table(xtabs(~gender + manager, data = df), margin = 1)
+prop.table(xtabs(~ gender + manager, data = df), margin = 1)
 
 # Proportions/Percentages for Multiple variables BY COLUMN (MARGINAL)
-prop.table(xtabs(~gender + manager + educ, data = df), margin = 2)
+prop.table(xtabs(~ gender + manager, data = df), margin = 2)
 
 # Proportions/Percentages for Multiple variables BY ARRAY ELEMENT (MARGINAL)
-prop.table(xtabs(~gender + manager + educ, data = df), margin = 3)
+prop.table(xtabs(~ gender + manager + educ, data = df), margin = 3)
 
 ################################################################################
 ################################################################################
@@ -128,16 +142,19 @@ sum(is.na(df))
 
 df  %>%
   summarise_all(list(~is.na(.)))%>%
-  pivot_longer(everything(),
-               names_to = "variables", values_to="missing") %>%
+  pivot_longer(everything(), names_to = "variables", values_to="missing") %>%
   count(variables, missing) %>%
   ggplot(aes(y=variables,x=n,fill=missing))+
-  geom_col(position = "fill") + labs(x="Proportion") + 
-  ggtitle("Proportion Data Missingness by Variable")
+  geom_col(position = "fill")+
+  labs(x="Proportion")+
+  scale_fill_manual(values=c("skyblue3","gold"))+
+  theme(axis.title.y=element_blank()) + 
+  ggtitle("Data Missingness Proportions by Variable")
 
 
 # Delete all observations with missing values (listwise deletion)
 df <- na.omit(df)
+sum(is.na(df)) # No missing values anymore
 
 ################################################################################
 ################################################################################
@@ -147,18 +164,31 @@ df <- na.omit(df)
 ################################################################################
 ################################################################################
 
-# Simple filter by single condition -> Extract all employees at facility "LV"
-df_filt <- df %>% filter(gender=="Male")
+# Simple filter by single condition -> Extract all employees
+df_filt <- df %>% filter(gender == "Male")
 
-# Simple filter by single condition and sort results 
-df_filt <- df %>% filter(gender == "Male") %>% arrange(desc(turnover)) # Descending order
-df_filt <- df %>% filter(gender == "Male") %>% arrange(turnover) # Ascending order
+# Simple filter by single condition and sort results
+df_filt <- df %>%
+              filter(gender == "Male") %>%
+              arrange(desc(turnover)) # Descending order
+head(df_filt)
+
+
+df_filt <- df %>%                        # Ascending order
+              filter(gender == "Male") %>%
+               arrange(turnover) 
+
+head(df_filt)
 
 # Filter by multiple conditions where ALL must be true
-df_filt <- df %>% filter(gender=="Male" & manager=="Yes" & turnover < 3)
+df_filt <- df %>% 
+              filter(gender == "Male" & manager == "Yes" & turnover < 3)
+head(df_filt)
 
 # Filter by multiple conditions where ONE or more must be true
-df_filt <- df %>% filter(manager == "Yes" | gender == "Male" | turnover < 3)
+df_filt <- df %>% 
+              filter(manager == "Yes" | gender == "Male" | turnover < 3)
+head(df_filt)
 
 ################################################################################
 ################################################################################
@@ -169,17 +199,21 @@ df_filt <- df %>% filter(manager == "Yes" | gender == "Male" | turnover < 3)
 ################################################################################
 
 # Alter current variable
-df<-df %>% mutate(age = age + 10)
+df <- df %>% 
+        mutate(age = age + 10)
 
 
 # Make new numeric variable as function of old one (Age squared)
-df<-df %>% mutate(age_sq = age^2)
+df <- df %>% 
+        mutate(age_sq = age^2)
 
 
 # Making a new variable based on text patterns in current variable
-df <- df %>% mutate(facility = substr(code, start = 1, stop = 2))
+df <- df %>% 
+        mutate(facility = substr(x = code, start = 1, stop = 2))
 
-df <- df %>% relocate(facility, .before = age)
+df <- df %>% 
+        relocate(facility, .before = age)
 
 df$facility <- factor(df$facility)
 
@@ -189,11 +223,11 @@ df$facility <- factor(df$facility)
 
 df <- df %>%
         mutate(flight_risk = case_when(
-        turnover <= 1.999 ~ 'Very-Low-Risk',
-        turnover > 1.999 & turnover <= 2.999 ~ 'Low-Risk',
-        turnover > 2.999 & turnover < 4 ~ 'Moderate-Risk',
-        TRUE ~ 'High-Risk'
-         )) 
+                turnover <= 1.999 ~ "Very-Low-Risk",
+                turnover > 1.999 & turnover <= 2.999 ~ "Low-Risk",
+                turnover > 2.999 & turnover < 4 ~ "Moderate-Risk",
+                TRUE ~ "High-Risk"
+  ))
 
 ################################################################################
 ################################################################################
@@ -205,24 +239,25 @@ df <- df %>%
 
 # This filters for only employees at facility "LV" and then makes a new variable
 # called Turnover Risk, where if they have a turnover intent level of 3 or greater,
-# they are classified as High Risk. Then those results are sorted in descending 
+# they are classified as High Risk. Then those results are sorted in descending
 # order, such that the High Risk employees are listed first
 
-highrisk_LV<-df %>% 
-                filter(facility=="LV") %>% 
-                mutate(TI_risk = ifelse(turnover >= 3, "HighRisk", "LowRisk")) %>% 
-                arrange(desc(TI_risk))
+highrisk_LV <- df %>%
+                  filter(facility == "LV") %>%
+                  mutate(TI_risk = ifelse(turnover >= 3, "HighRisk", "LowRisk")) %>%
+                  arrange(desc(TI_risk))
+
+head(highrisk_LV) 
 
 # This filters for only Males over Age 10 and then makes a new variable called age
 # squared by squaring the original age values. Then those results are sorted in
 # descending order by the new age squared variable
 
-oldman_agesq<-df %>% 
-              filter(gender=="Male" & age > 10) %>% 
-              mutate(age_sq = age^2) %>% 
-              arrange(desc(age_sq))
+oldman_agesq <- df %>%
+                  filter(gender == "Male" & age > 10) %>%
+                  mutate(age_sq = age^2) %>%
+                   arrange(desc(age_sq))
 
-head(highrisk_LV)
 head(oldman_agesq)
 
 ################################################################################
@@ -234,41 +269,62 @@ head(oldman_agesq)
 ################################################################################
 
 # Summarize -> Mean Turnover and Median Age
-df %>% summarize(mean_turnover = mean(turnover))
 
-df %>% summarize(middleage=summary(age))
+df %>% 
+  summarize(mean_turnover = mean(turnover))
+
+df %>% 
+  summarize(middleage = median(age))
 
 
 # Filter then Summarize -> mean turnover for just men
-df %>% filter(gender=="Male") %>% summarize(men_avg_turnover = mean(turnover))
+df %>%
+  filter(gender == "Male") %>%
+  summarize(men_avg_turnover = mean(turnover))
 
 # Filter then Summarize -> mean turnover for only those over 10 years old
-df %>% filter(age>10) %>% summarize(mean_paysatisfaction = mean(paysatis))
+df %>%
+  filter(age > 10) %>%
+  summarize(mean_paysatisfaction = mean(paysatis))
 
 # GroupBy then Summarize -> median pay satisfaction by gender
-df %>% group_by(gender) %>% summarize(middle_paysat = median(paysatis))
+df %>%
+  group_by(gender) %>%
+  summarize(middle_paysat = median(paysatis))
 
 # GroupBy then Multiple Summary Stats -> mean turnover and max age by facility
-df %>% group_by(facility) %>% summarize(mean_turnover=mean(turnover), maxage=max(age)) 
+df %>%
+  group_by(facility) %>%
+  summarize(mean_turnover = mean(turnover), maxage = max(age))
 
 # GroupBy then Multiple Summary -> mean turnover, max age, median pay satisf. by facility
-df %>% group_by(facility) %>% 
-  summarize(mean_turnover=mean(turnover), maxage=max(age), middlepag = median(paysatis))
+df %>%
+  group_by(facility) %>%
+  summarize(
+    mean_turnover = mean(turnover),
+    maxage = max(age),
+    middlepay = median(paysatis))
 
 
 # Filter then Group then Summary -> Filter for TO > 3, calculate average paysatis by gender
-df %>% filter(turnover >= 3) %>% group_by(gender) %>% summarize(mean_paysatis=mean(paysatis))
 
-# Filter for TO > 3, calc. avg paysatis & avg fairness by facility
-df %>% 
-  filter(turnover >= 3) %>% 
-  group_by(facility) %>% 
-  summarize(avg_pay=mean(paysatis), avg_fair=mean(fairness))
+df %>%
+  filter(turnover >= 3) %>%
+  group_by(gender) %>%
+  summarize(mean_paysatis = mean(paysatis))
+
+# Filter for TO > 3, calc. avg paysatis & avg fair by facility
+df %>%
+  filter(turnover >= 3) %>%
+  group_by(facility) %>%
+  summarize(avg_pay = mean(paysatis), avg_fair = mean(fair))
 
 
 # Multiple GroupBys then summarize -> median pay satisfaction by facility and gender
 
-df %>% group_by(facility, gender) %>% summarize(midpay=median(paysatis))
+df %>%
+  group_by(facility, gender) %>%
+  summarize(midpay = median(paysatis))
 
 # GroupBy -> Summary Stats -> Filter based on those summary stats
 
@@ -278,14 +334,8 @@ df %>% group_by(facility, gender) %>% summarize(midpay=median(paysatis))
 
 df %>%
   group_by(facility) %>%
-  summarise(
-    n = n(),
-    avgpaysat = mean(paysatis)
-  ) %>%
-  filter(
-    n > 10,
-    avgpaysat > 2
-  )
+  summarise(n = n(), avgpaysat = mean(paysatis)) %>%
+  filter(n > 10, avgpaysat > 2)
 
 #################################################################################
 ################################################################################
@@ -296,23 +346,38 @@ df %>%
 ################################################################################
 
 # dataframe with avg pay satisfaciton for each facility
-by_fac<-df %>% group_by(facility) %>% summarize(avgpay=mean(paysatis))
+by_facility <- df %>%
+  group_by(facility) %>%
+  summarize(avgpay = mean(paysatis))
 
 # Plot average pay satisfaction by facility
-ggplot(by_fac, aes(facility, avgpay, color=facility, size=avgpay))+geom_point()
+ggplot(data = by_facility, aes(x = facility, 
+                               y = avgpay, 
+                               color = facility, 
+                               size = avgpay)) +
+                                geom_point()
 
 # Same thing but with avg turnover
-by_fac2<-df %>% group_by(facility) %>% summarize(median_turnover=median(turnover))
+by_facility_2 <- df %>%
+                    group_by(facility) %>%
+                    summarize(median_turnover = median(turnover))
 
-ggplot(by_fac2, aes(facility, median_turnover, color=facility, size=median_turnover))+
-  geom_point()
+ggplot(data = by_facility_2, aes(x = facility, 
+                                 y = median_turnover, 
+                                 color = facility, 
+                                 size = median_turnover)) +
+                                  geom_point()
 
 
-by_fac_gender <- df %>% 
-  group_by(facility, gender) %>% 
-  summarize(midpay=median(paysatis))
+by_fac_gender <- df %>%
+                    group_by(facility, gender) %>%
+                    summarize(midpay = median(paysatis))
 
-ggplot(by_fac_gender, aes(x=facility, y=midpay, color=gender, size=midpay))+geom_point()
+ggplot(data = by_fac_gender, aes(x = facility, 
+                                 y = midpay, 
+                                 color = gender, 
+                                 size = midpay)) +
+                                  geom_point()
 
 ################################################################################
 ################################################################################
@@ -330,33 +395,44 @@ ggplot(by_fac_gender, aes(x=facility, y=midpay, color=gender, size=midpay))+geom
 # have 9 different rows. The other columns for that employee will be duplicated
 # across the 9 rows.
 
-df2 <- df %>% pivot_longer(cols=hr1:hr9,
-                    names_to='HR',
-                    values_to='rating')
-View(df2)
+df2 <- df %>%
+          pivot_longer(cols = hr1:hr9,
+                      names_to = "HR",
+                      values_to = "rating")
+
+head(df2)
 
 # Now we decide this is awful. Let's go back to 1 row per employee. We need to tell
 # R how we want to handle the duplicated values in the other columns. We resolve this
 # by using value_fn = mean. Note: You might not need to specify this for your data.
 
-df2 <- df2 %>% pivot_wider(names_from = HR, values_from = rating, values_fn=mean)
+df2 <- df2 %>% 
+            pivot_wider(names_from = HR, 
+                        values_from = rating, 
+                         values_fn = mean)
 
 
 # Example 2 Using HR dataset -> Identify columns containing the phrase "Rate"
 
-a <- colnames(df_b)[grepl("Rate",colnames(df_b))]
+head(df_b) # Just to see what it currently looks like
+
+a <- colnames(df_b)[grepl("Rate", colnames(df_b))]
 a
 
 # All three of these columns are pay rates, so we decide to use long form.
 # After doing so, each employee will have three rows (all the other cols are dupes)
 
-df_b2 <- df_b %>% pivot_longer(cols=all_of(a),names_to='PayFrequency',values_to='PayAmount')
-
-View(df_b2)
+df_b2 <- df_b %>% 
+              pivot_longer(cols = all_of(a), 
+                           names_to = "PayFrequency", 
+                           values_to = "PayAmount")
+head(df_b2)
 
 # Let's go back to wide form because we want each employee to have one row after all
 
-df_b2 <- df_b2 %>% pivot_wider(names_from = PayFrequency, values_from = PayAmount)
+df_b2 <- df_b2 %>% 
+                pivot_wider(names_from = PayFrequency, 
+                            values_from = PayAmount)
 
 #################################################################################
 #################################################################################
@@ -368,16 +444,24 @@ df_b2 <- df_b2 %>% pivot_wider(names_from = PayFrequency, values_from = PayAmoun
 
 # Get first two letters of company ID code and make new facility variable
 
-df <- df %>% mutate(facility = str_sub(code, 1,2))
+df <- df %>% 
+        mutate(facility = str_sub(code, start = 1, stop = 2))
 
 # Subset for only the rows where the facility matches "RK"
-df[grep(pattern = "RK", df$facility),]
+df[grep(pattern = "RK", df$facility), ]
 
 # Select only the columns that start with 'HR'
-df %>% select(starts_with('HR'))
+df3 <- df %>% 
+          select(starts_with("HR"))
+
+head(df3)
+
 
 # Select only the columns that end with 'over'
-df %>% select(ends_with('over'))
+df3 <- df %>% 
+          select(ends_with("over"))
+
+head(df3)
 
 #################################################################################
 #################################################################################
@@ -396,15 +480,16 @@ aggregate(x = df$turnover, by = list(df$facility), FUN = median) # Method 1
 tapply(X = df$turnover, INDEX = df$facility, FUN = median) # Method 2
 
 # Sort in ascending/descending order
-sort(data = df$turnover, decreasing = FALSE)
+sort(x = df$turnover, decreasing = FALSE)
 
 
 # Make new column as function of old column -> Mean Center Original Turnover Variable
-df$turnover_centered<-df$turnover-mean(df$turnover)
+df$turnover_centered <- df$turnover - mean(df$turnover)
+head(df$turnover_centered)
 
 # Make new column as function of old column -> Age Squared
 df$age <- df$age^2
-
+head(df$age)
 
 # Filtering Data -> employees age over 10, all columns
 a <- df[df$age > 10, ] # Method 1
@@ -414,21 +499,18 @@ a <- subset(x = df, subset = age > 10) # Method 2
 a
 
 # Filtering Data 0=-> all employees, just the age and turnover columns
-a <- df[,c('age','turnover')]
+a <- df[, c("age", "turnover")]
 a
 
 # Filtering  -> employees age over 10, just the age and turnover columns
-a <- df[df$age > 10, c('age','turnover')] # Method 1
+a <- df[df$age > 10, c("age", "turnover")] # Method 1
 a
 
-a <- subset(df, subset = age > 10, select = c('age','turnover')) # Method 2
+a <- subset(df, subset = age > 10, select = c("age", "turnover")) # Method 2
 a
 
 # Filtering and Summarize -> Mean pay satisfaction for employees whose turnover intent > 3
 
-mean(df[df$turnover>3,]$paysatis)          # Method 1
+mean(df[df$turnover > 3, ]$paysatis) # Method 1
 
 mean(subset(df$paysatis, df$turnover > 3)) # Method 2
-
-
-
