@@ -95,6 +95,17 @@ head(df)
 df <- df %>% relocate(caropp, .before = educ)
 head(df)
 
+# Select only numeric variables
+df_numeric <- df %>% 
+                  select_if(is.numeric) 
+
+head(df_numeric)
+
+# Select only character/categorical variables
+df_categorical <- df %>% 
+                      select_if(is.character) 
+str(df_categorical)
+
 ################################################################################
 ################################################################################
 
